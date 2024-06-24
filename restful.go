@@ -160,7 +160,7 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	}
 
 	if c := FindChannel(id, channel); c != nil {
-		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Preset(cmd, uint8(nPreset), name)), w, r)
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Navigate(cmd, uint8(nPreset), name)), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}
