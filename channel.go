@@ -230,6 +230,7 @@ func (channel *Channel) CreateRequst(Method sip.RequestMethod) (req sip.Request)
 	return req
 }
 
+// 录像查询
 func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error) {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
@@ -264,6 +265,32 @@ func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error
 	return r.list, r.err
 }
 
+// 查询预置位
+func (channel *Channel) QueryPreset(startPoint string, maxResults string) ([]*Preset, error) {
+	d := channel.Device
+	request := d.CreateRequest(sip.MESSAGE)
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+	body := BuildPresetXML(d.SN, channel.DeviceID, startPoint, maxResults)
+	request.SetBody(body, true)
+
+	resp, err := d.SipRequestForResponse(request)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %s", err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("query error, status=%d", resp.StatusCode())
+	}
+
+	// 解析响应的 XML 内容
+	var presets []*Preset
+	// err = xml.Unmarshal(respBody, &resp)
+	// if err != nil {
+	//     return nil, fmt.Errorf("failed to unmarshal preset response: %v", err)
+	// }
+	return presets, nil
+}
+
 func (channel *Channel) Control(PTZCmd string) int {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
@@ -277,6 +304,32 @@ func (channel *Channel) Control(PTZCmd string) int {
 		<PTZCmd>%s</PTZCmd>
 		</Control>`, d.SN, channel.DeviceID, PTZCmd)
 	request.SetBody(body, true)
+	resp, err := d.SipRequestForResponse(request)
+	if err != nil {
+		return http.StatusRequestTimeout
+	}
+	return int(resp.StatusCode())
+}
+
+// 设备控制 - 预置位控制
+func (channel *Channel) Control_Preset(cmd string, preset uint8, name string) int {
+	d := channel.Device
+	request := d.CreateRequest(sip.MESSAGE)
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+
+	// 构建 XML 请求体
+	body := fmt.Sprintf(`<?xml version="1.0"?>
+        <Control>
+        <CmdType>PresetControl</CmdType>
+        <SN>%d</SN>
+        <DeviceID>%s</DeviceID>
+        <PresetIndex>%d</PresetIndex>
+        <PresetName>%s</PresetName>
+        <Command>%s</Command>
+        </Control>`, d.SN, channel.DeviceID, preset, name, cmd)
+	request.SetBody(body, true)
+
 	resp, err := d.SipRequestForResponse(request)
 	if err != nil {
 		return http.StatusRequestTimeout

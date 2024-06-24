@@ -29,6 +29,7 @@ func (c *GB28181Config) API_list(w http.ResponseWriter, r *http.Request) {
 	}, w, r)
 }
 
+// 录像查询
 func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id := query.Get("id")
@@ -52,6 +53,25 @@ func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 预置位查询
+func (c *GB28181Config) API_presets(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	channel := q.Get("channel")
+	page := q.Get("page")
+	pageSize := q.Get("pageSize")
+	if c := FindChannel(id, channel); c != nil {
+		res, err := c.QueryPreset(page, pageSize)
+		if err == nil {
+			util.ReturnValue(res, w, r)
+		} else {
+			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+		}
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
 func (c *GB28181Config) API_control(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	channel := r.URL.Query().Get("channel")
@@ -63,7 +83,8 @@ func (c *GB28181Config) API_control(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *GB28181Config) API_ptz(w http.ResponseWriter, r *http.Request) {
+// 设备控制 - 云台控制
+func (c *GB28181Config) API_control_ptz(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	id := q.Get("id")
 	channel := q.Get("channel")
@@ -96,6 +117,28 @@ func (c *GB28181Config) API_ptz(w http.ResponseWriter, r *http.Request) {
 	if c := FindChannel(id, channel); c != nil {
 		code := c.Control(ptzcmd)
 		util.ReturnError(code, "device received", w, r)
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
+// 设备控制 - 预置位控制
+func (c *GB28181Config) API_control_preset(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	channel := q.Get("channel")
+	cmd := q.Get("cmd")       // 控制指令，set, goto, remove
+	preset := q.Get("preset") // 预置位编号(1~255)
+	name := q.Get("name")     // 预置位名称, cmd=set 时有效
+
+	nPreset, err := strconv.ParseUint(preset, 10, 8)
+	if err != nil {
+		util.ReturnError(util.APIErrorQueryParse, "preset parameter is invalid", w, r)
+		return
+	}
+
+	if c := FindChannel(id, channel); c != nil {
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Preset(cmd, uint8(nPreset), name)), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}

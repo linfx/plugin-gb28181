@@ -33,6 +33,13 @@ type Record struct {
 	Type      string
 }
 
+// 预置位
+type Preset struct {
+	DeviceID   string // 设备ID
+	PresetID   int    // 预置位编号
+	PresetName string // 预置位名称
+}
+
 func (r *Record) GetPublishStreamPath() string {
 	return fmt.Sprintf("%s/%s", r.DeviceID, r.StartTime)
 }

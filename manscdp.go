@@ -42,6 +42,16 @@ var (
 <DeviceID>%s</DeviceID>
 <Interval>%d</Interval>
 </Query>`
+
+	// PresetXML 获取预置位列表
+	PresetXML = `<?xml version="1.0"?>
+<Query>
+<CmdType>Preset</CmdType>
+<SN>%d</SN>
+<DeviceID>%s</DeviceID>
+<StartPoint>%d</StartPoint>
+<MaxResults>%d</MaxResults>
+</Query>`
 )
 
 func intTotime(t int64) time.Time {
@@ -89,4 +99,9 @@ var (
 // BuildRecordInfoXML 获取录像文件列表指令
 func BuildAlarmResponseXML(id string) string {
 	return fmt.Sprintf(AlarmResponseXML, id)
+}
+
+// 获取预置位列表
+func BuildPresetXML(sn int, id string, startPoint string, maxResults string) string {
+	return fmt.Sprintf(PresetXML, sn, id, startPoint, maxResults)
 }
