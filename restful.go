@@ -124,6 +124,20 @@ func (c *GB28181Config) API_control_ptz(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// 设备控制 - 焦点光圈控制
+func (c *GB28181Config) API_control_fi(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	channel := q.Get("channel")
+	cmd := q.Get("cmd") // 控制指令: focusnear, focusfar, irisin, irisout, stop
+
+	if c := FindChannel(id, channel); c != nil {
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control(cmd)), w, r)
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
 // 设备控制 - 预置位控制
 func (c *GB28181Config) API_control_preset(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
