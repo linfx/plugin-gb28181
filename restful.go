@@ -146,14 +146,14 @@ func (c *GB28181Config) API_control_preset(w http.ResponseWriter, r *http.Reques
 	preset := q.Get("preset") // 预置位编号(1~255)
 	name := q.Get("name")     // 预置位名称, cmd=set 时有效
 
-	nPreset, err := strconv.ParseUint(preset, 10, 8)
+	presetN, err := strconv.ParseUint(preset, 10, 8)
 	if err != nil {
 		util.ReturnError(util.APIErrorQueryParse, "preset parameter is invalid", w, r)
 		return
 	}
 
 	if c := FindChannel(id, channel); c != nil {
-		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Preset(cmd, uint8(nPreset), name)), w, r)
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Preset(cmd, uint8(presetN), name)), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}
