@@ -189,9 +189,8 @@ func (c *GB28181Config) removeBanDevice() {
 	})
 }
 
-// statusCheck
 // -  当设备超过 3 倍心跳时间未发送过心跳（通过 UpdateTime 判断）, 视为离线
-// - 	当设备超过注册有效期内为发送过消息，则从设备列表中删除
+// -  当设备超过注册有效期内为发送过消息，则从设备列表中删除
 // UpdateTime 在设备发送心跳之外的消息也会被更新，相对于 LastKeepaliveAt 更能体现出设备最会一次活跃的时间
 func (c *GB28181Config) statusCheck() {
 	Devices.Range(func(key, value any) bool {
