@@ -13,6 +13,11 @@ import (
 	"m7s.live/engine/v4/util"
 )
 
+var conf GB28181Config
+var GB28181Plugin = InstallPlugin(&conf)
+var PullStreams sync.Map //拉流
+var SipUri *sip.SipUri
+
 type GB28181PositionConfig struct {
 	AutosubPosition bool          `desc:"是否自动订阅定位"`             //是否自动订阅定位
 	Expires         time.Duration `default:"3600s" desc:"订阅周期"` //订阅周期
@@ -54,10 +59,7 @@ type GB28181Config struct {
 	udpPorts          PortManager
 
 	Position GB28181PositionConfig //关于定位的配置参数
-
 }
-
-var SipUri *sip.SipUri
 
 func (c *GB28181Config) initRoutes() {
 	c.routes = make(map[string]string)
@@ -142,8 +144,3 @@ func (c *GB28181Config) OnEvent(event any) {
 func (c *GB28181Config) IsMediaNetworkTCP() bool {
 	return strings.ToLower(c.MediaNetwork) == "tcp"
 }
-
-var conf GB28181Config
-
-var GB28181Plugin = InstallPlugin(&conf)
-var PullStreams sync.Map //拉流
