@@ -234,10 +234,9 @@ func (c *GB28181Config) API_presets(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	id := q.Get("id")
 	channel := q.Get("channel")
-	page := q.Get("page")
-	pageSize := q.Get("pageSize")
+
 	if c := FindChannel(id, channel); c != nil {
-		res, err := c.QueryPreset(page, pageSize)
+		res, err := c.QueryPreset()
 		if err == nil {
 			util.ReturnValue(res, w, r)
 		} else {

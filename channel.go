@@ -275,12 +275,12 @@ func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error
 }
 
 // 查询预置位
-func (channel *Channel) QueryPreset(startPoint string, maxResults string) ([]*Preset, error) {
+func (channel *Channel) QueryPreset() ([]*Preset, error) {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
 	contentType := sip.ContentType("Application/MANSCDP+xml")
 	request.AppendHeader(&contentType)
-	body := BuildPresetXML(d.SN, channel.DeviceID, startPoint, maxResults)
+	body := BuildPresetXML(d.SN, channel.DeviceID)
 	request.SetBody(body, true)
 
 	resp, err := d.SipRequestForResponse(request)

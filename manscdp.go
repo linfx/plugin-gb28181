@@ -93,17 +93,15 @@ func BuildAlarmResponseXML(id string) string {
 }
 
 // 获取预置位列表
-func BuildPresetXML(sn int, id string, startPoint string, maxResults string) string {
+func BuildPresetXML(sn int, id string) string {
 
 	// 获取预置位列表
 	xml := `<?xml version="1.0"?>
 	<Query>
-		<CmdType>Preset</CmdType>
+		<CmdType>PresetQuery</CmdType>
 		<SN>%d</SN>
 		<DeviceID>%s</DeviceID>
-		<StartPoint>%s</StartPoint>
-		<MaxResults>%s</MaxResults>
 	</Query>`
 
-	return fmt.Sprintf(xml, sn, id, startPoint, maxResults)
+	return fmt.Sprintf(xml, sn, id)
 }
