@@ -48,7 +48,7 @@ func BuildCatalogXML(sn int, id string) string {
 // 获取录像文件列表指令
 func BuildRecordInfoXML(sn int, id string, start, end int64) string {
 
-	// RecordInfoXML 获取录像文件列表xml样式
+	// 获取录像文件列表xml样式
 	xml := `<?xml version="1.0"?>
 	<Query>
 		<CmdType>RecordInfo</CmdType>

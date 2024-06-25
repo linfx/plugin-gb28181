@@ -250,21 +250,11 @@ func (channel *Channel) CreateRequst(Method sip.RequestMethod) (req sip.Request)
 }
 
 // 录像查询
-func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error) {
+func (channel *Channel) QueryRecords(startTime, endTime string) ([]*Record, error) {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
 	contentType := sip.ContentType("Application/MANSCDP+xml")
 	request.AppendHeader(&contentType)
-	// body := fmt.Sprintf(`<?xml version="1.0"?>
-	// 	<Query>
-	// 	<CmdType>RecordInfo</CmdType>
-	// 	<SN>%d</SN>
-	// 	<DeviceID>%s</DeviceID>
-	// 	<StartTime>%s</StartTime>
-	// 	<EndTime>%s</EndTime>
-	// 	<Secrecy>0</Secrecy>
-	// 	<Type>all</Type>
-	// 	</Query>`, d.sn, channel.DeviceID, startTime, endTime)
 	start, _ := strconv.ParseInt(startTime, 10, 0)
 	end, _ := strconv.ParseInt(endTime, 10, 0)
 	body := BuildRecordInfoXML(d.SN, channel.DeviceID, start, end)
