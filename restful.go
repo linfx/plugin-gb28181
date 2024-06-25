@@ -210,6 +210,20 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// 设备控制 - 布防撤防
+func (c *GB28181Config) API_control_guard(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	channel := q.Get("channel")
+	cmd := q.Get("cmd") // 控制指令: SetGuard, ResetGuard
+
+	if c := FindChannel(id, channel); c != nil {
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Guard(cmd)), w, r)
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
 // 录像查询
 func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()

@@ -373,6 +373,30 @@ func (channel *Channel) Control_Navigate(cmd string, groupid uint8, preset uint8
 	return int(resp.StatusCode())
 }
 
+// 设备控制 - 布防撤防
+func (channel *Channel) Control_Guard(cmd string) int {
+	d := channel.Device
+	request := d.CreateRequest(sip.MESSAGE)
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+
+	// 构建 XML 请求体
+	body := fmt.Sprintf(`<?xml version="1.0"?>
+        <Control>
+			<CmdType>DeviceControl</CmdType>
+			<SN>%d</SN>
+			<DeviceID>%s</DeviceID>
+			<GuardCmd>%s</GuardCmd>
+        </Control>`, d.SN, channel.DeviceID, cmd)
+	request.SetBody(body, true)
+
+	resp, err := d.SipRequestForResponse(request)
+	if err != nil {
+		return http.StatusRequestTimeout
+	}
+	return int(resp.StatusCode())
+}
+
 // Invite 发送Invite报文 invites a channel to play
 // 注意里面的锁保证不同时发送invite报文，该锁由channel持有
 /***
