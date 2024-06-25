@@ -117,8 +117,7 @@ func (c *GB28181Config) API_control_ptz(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if c := FindChannel(id, channel); c != nil {
-		code := c.Control(ptzcmd)
-		util.ReturnError(code, "device received", w, r)
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control(ptzcmd)), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}
