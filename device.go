@@ -12,6 +12,7 @@ import (
 
 	"go.uber.org/zap"
 	"m7s.live/engine/v4"
+	"m7s.live/engine/v4/log"
 	"m7s.live/plugin/gb28181/v4/utils"
 
 	"github.com/ghettovoice/gosip/sip"
@@ -22,6 +23,42 @@ const TIME_LAYOUT = "2006-01-02T15:04:05"
 
 func (r *Record) GetPublishStreamPath() string {
 	return fmt.Sprintf("%s/%s", r.DeviceID, r.StartTime)
+}
+
+// 设备
+type Device struct {
+	ID              string
+	Name            string
+	Manufacturer    string
+	Model           string
+	Owner           string
+	RegisterTime    time.Time
+	UpdateTime      time.Time
+	LastKeepaliveAt time.Time
+	Status          DeviceStatus
+	SN              int
+	Addr            sip.Address `json:"-" yaml:"-"`
+	SipIP           string      //设备对应网卡的服务器ip
+	MediaIP         string      //设备对应网卡的服务器ip
+	NetAddr         string
+	channelMap      sync.Map
+	subscriber      struct {
+		CallID  string
+		Timeout time.Time
+	}
+	lastSyncTime time.Time
+	GpsTime      time.Time //gps时间
+	Longitude    string    //经度
+	Latitude     string    //纬度
+	*log.Logger  `json:"-" yaml:"-"`
+}
+
+// 设备位置
+type DevicePosition struct {
+	ID        string
+	GpsTime   time.Time //gps时间
+	Longitude string    //经度
+	Latitude  string    //纬度
 }
 
 var (
@@ -296,6 +333,7 @@ func (d *Device) CreateRequest(Method sip.RequestMethod) (req sip.Request) {
 	return
 }
 
+// 设备订阅
 func (d *Device) Subscribe() int {
 	request := d.CreateRequest(sip.SUBSCRIBE)
 	if d.subscriber.CallID != "" {
@@ -323,6 +361,7 @@ func (d *Device) Subscribe() int {
 	return http.StatusRequestTimeout
 }
 
+// 设备目录查询
 func (d *Device) Catalog() int {
 	//os.Stdout.Write(debug.Stack())
 	request := d.CreateRequest(sip.MESSAGE)
@@ -345,6 +384,7 @@ func (d *Device) Catalog() int {
 	return http.StatusRequestTimeout
 }
 
+// 设备信息查询
 func (d *Device) QueryDeviceInfo() {
 	for i := time.Duration(5); i < 100; i++ {
 
@@ -370,11 +410,7 @@ func (d *Device) QueryDeviceInfo() {
 	}
 }
 
-func (d *Device) SipRequestForResponse(request sip.Request) (sip.Response, error) {
-	return srv.RequestWithContext(context.Background(), request)
-}
-
-// MobilePositionSubscribe 移动位置订阅
+// 移动位置订阅
 func (d *Device) MobilePositionSubscribe(id string, expires time.Duration, interval time.Duration) (code int) {
 	mobilePosition := d.CreateRequest(sip.SUBSCRIBE)
 	if d.subscriber.CallID != "" {
@@ -402,7 +438,12 @@ func (d *Device) MobilePositionSubscribe(id string, expires time.Duration, inter
 	return http.StatusRequestTimeout
 }
 
-// UpdateChannelPosition 更新通道GPS坐标
+// 向设备发送请求并获取响应
+func (d *Device) SipRequestForResponse(request sip.Request) (sip.Response, error) {
+	return srv.RequestWithContext(context.Background(), request)
+}
+
+// 更新通道GPS坐标
 func (d *Device) UpdateChannelPosition(channelId string, gpsTime string, lng string, lat string) {
 	if v, ok := d.channelMap.Load(channelId); ok {
 		c := v.(*Channel)
@@ -419,7 +460,7 @@ func (d *Device) UpdateChannelPosition(channelId string, gpsTime string, lng str
 	}
 }
 
-// UpdateChannelStatus 目录订阅消息处理：新增/移除/更新通道或者更改通道状态
+// 目录订阅消息处理：新增/移除/更新通道或者更改通道状态
 func (d *Device) UpdateChannelStatus(deviceList []*notifyMessage) {
 	for _, v := range deviceList {
 		switch v.Event {
