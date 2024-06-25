@@ -14,6 +14,53 @@ var (
 	playScaleValues = map[float32]bool{0.25: true, 0.5: true, 1: true, 2: true, 4: true}
 )
 
+// 从设备拉取视频流
+func (c *GB28181Config) API_invite(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	id := query.Get("id")
+	channel := query.Get("channel")
+	streamPath := query.Get("streamPath")
+	port, _ := strconv.Atoi(query.Get("mediaPort"))
+	opt := InviteOptions{
+		dump:       query.Get("dump"),
+		MediaPort:  uint16(port),
+		StreamPath: streamPath,
+	}
+	startTime := query.Get("startTime")
+	endTime := query.Get("endTime")
+	trange := strings.Split(query.Get("range"), "-")
+	if len(trange) == 2 {
+		startTime = trange[0]
+		endTime = trange[1]
+	}
+	opt.Validate(startTime, endTime)
+	if c := FindChannel(id, channel); c == nil {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	} else if opt.IsLive() && c.State.Load() > 0 {
+		util.ReturnError(util.APIErrorQueryParse, "live stream already exists", w, r)
+	} else if code, err := c.Invite(&opt); err == nil {
+		if code == 200 {
+			util.ReturnOK(w, r)
+		} else {
+			util.ReturnError(util.APIErrorInternal, fmt.Sprintf("invite return code %d", code), w, r)
+		}
+	} else {
+		util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+	}
+}
+
+// 停止从设备拉流
+func (c *GB28181Config) API_bye(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	channel := r.URL.Query().Get("channel")
+	streamPath := r.URL.Query().Get("streamPath")
+	if c := FindChannel(id, channel); c != nil {
+		util.ReturnError(0, fmt.Sprintf("bye code:%d", c.Bye(streamPath)), w, r)
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
 // 设备列表
 func (c *GB28181Config) API_list(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -28,49 +75,6 @@ func (c *GB28181Config) API_list(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}, w, r)
-}
-
-// 录像查询
-func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	id := query.Get("id")
-	channel := query.Get("channel")
-	startTime := query.Get("startTime")
-	endTime := query.Get("endTime")
-	trange := strings.Split(query.Get("range"), "-")
-	if len(trange) == 2 {
-		startTime = trange[0]
-		endTime = trange[1]
-	}
-	if c := FindChannel(id, channel); c != nil {
-		res, err := c.QueryRecords(startTime, endTime)
-		if err == nil {
-			util.ReturnValue(res, w, r)
-		} else {
-			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
-		}
-	} else {
-		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
-	}
-}
-
-// 预置位查询
-func (c *GB28181Config) API_presets(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	id := q.Get("id")
-	channel := q.Get("channel")
-	page := q.Get("page")
-	pageSize := q.Get("pageSize")
-	if c := FindChannel(id, channel); c != nil {
-		res, err := c.QueryPreset(page, pageSize)
-		if err == nil {
-			util.ReturnValue(res, w, r)
-		} else {
-			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
-		}
-	} else {
-		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
-	}
 }
 
 // 设备控制
@@ -201,18 +205,11 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// 从设备拉取视频流
-func (c *GB28181Config) API_invite(w http.ResponseWriter, r *http.Request) {
+// 录像查询
+func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id := query.Get("id")
 	channel := query.Get("channel")
-	streamPath := query.Get("streamPath")
-	port, _ := strconv.Atoi(query.Get("mediaPort"))
-	opt := InviteOptions{
-		dump:       query.Get("dump"),
-		MediaPort:  uint16(port),
-		StreamPath: streamPath,
-	}
 	startTime := query.Get("startTime")
 	endTime := query.Get("endTime")
 	trange := strings.Split(query.Get("range"), "-")
@@ -220,29 +217,32 @@ func (c *GB28181Config) API_invite(w http.ResponseWriter, r *http.Request) {
 		startTime = trange[0]
 		endTime = trange[1]
 	}
-	opt.Validate(startTime, endTime)
-	if c := FindChannel(id, channel); c == nil {
-		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
-	} else if opt.IsLive() && c.State.Load() > 0 {
-		util.ReturnError(util.APIErrorQueryParse, "live stream already exists", w, r)
-	} else if code, err := c.Invite(&opt); err == nil {
-		if code == 200 {
-			util.ReturnOK(w, r)
+	if c := FindChannel(id, channel); c != nil {
+		res, err := c.QueryRecords(startTime, endTime)
+		if err == nil {
+			util.ReturnValue(res, w, r)
 		} else {
-			util.ReturnError(util.APIErrorInternal, fmt.Sprintf("invite return code %d", code), w, r)
+			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
 		}
 	} else {
-		util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}
 }
 
-// 停止从设备拉流
-func (c *GB28181Config) API_bye(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	channel := r.URL.Query().Get("channel")
-	streamPath := r.URL.Query().Get("streamPath")
+// 预置位查询
+func (c *GB28181Config) API_presets(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	id := q.Get("id")
+	channel := q.Get("channel")
+	page := q.Get("page")
+	pageSize := q.Get("pageSize")
 	if c := FindChannel(id, channel); c != nil {
-		util.ReturnError(0, fmt.Sprintf("bye code:%d", c.Bye(streamPath)), w, r)
+		res, err := c.QueryPreset(page, pageSize)
+		if err == nil {
+			util.ReturnValue(res, w, r)
+		} else {
+			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+		}
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}
