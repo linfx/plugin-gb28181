@@ -231,6 +231,7 @@ func (d *Device) deleteChannel(DeviceID string) {
 	d.channelMap.Delete(DeviceID)
 }
 
+// 更新频道
 func (d *Device) UpdateChannels(list ...ChannelInfo) {
 	for _, c := range list {
 		if _, ok := conf.ignores[c.DeviceID]; ok {

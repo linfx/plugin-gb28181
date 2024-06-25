@@ -184,7 +184,6 @@ func (c *GB28181Config) OnRegister(req sip.Request, tx sip.ServerTransaction) {
 	}
 }
 
-// syncChannels
 // 同步设备信息、下属通道信息，包括主动查询通道信息，订阅通道变化情况
 func (d *Device) syncChannels() {
 	if time.Since(d.lastSyncTime) > 2*conf.HeartbeatInterval {
@@ -200,18 +199,24 @@ type MessageEvent struct {
 	Device *Device
 }
 
+// SIP 消息处理
 func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 	from, ok := req.From()
 	if !ok || from.Address == nil || from.Address.User() == nil {
 		GB28181Plugin.Error("OnMessage", zap.String("error", "no id"))
 		return
 	}
+
+	// 从 SIP 请求中提取设备 ID
 	id := from.Address.User().String()
 	GB28181Plugin.Debug("SIP<-OnMessage", zap.String("id", id), zap.String("source", req.Source()), zap.String("req", req.String()))
+
+	// 根据设备 ID 查找设备对象
 	if v, ok := Devices.Load(id); ok {
 		d := v.(*Device)
 		switch d.Status {
 		case DeviceOfflineStatus, DeviceRecoverStatus:
+			// 如果设备处于离线或恢复状态,就调用 RecoverDevice 函数进行恢复
 			c.RecoverDevice(d, req)
 			go d.syncChannels()
 		case DeviceRegisterStatus:
@@ -270,6 +275,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			d.Manufacturer = temp.Manufacturer
 			d.Model = temp.Model
 		case "Alarm":
+			// Alarm 命令, 将设备状态设置为报警状态,并生成报警响应消息
 			d.Status = DeviceAlarmedStatus
 			body = BuildAlarmResponseXML(d.ID)
 		case "Broadcast":
@@ -289,6 +295,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 		GB28181Plugin.Debug("Unauthorized message, device not found", zap.String("id", id))
 	}
 }
+
 func (c *GB28181Config) OnBye(req sip.Request, tx sip.ServerTransaction) {
 	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", ""))
 }
