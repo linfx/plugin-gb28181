@@ -218,7 +218,7 @@ func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
 		endTime = trange[1]
 	}
 	if c := FindChannel(id, channel); c != nil {
-		res, err := c.QueryRecords(startTime, endTime)
+		res, err := c.QueryRecord(startTime, endTime)
 		if err == nil {
 			util.ReturnValue(res, w, r)
 		} else {

@@ -250,7 +250,7 @@ func (channel *Channel) CreateRequst(Method sip.RequestMethod) (req sip.Request)
 }
 
 // 录像查询
-func (channel *Channel) QueryRecords(startTime, endTime string) ([]*Record, error) {
+func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error) {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
 	contentType := sip.ContentType("Application/MANSCDP+xml")
