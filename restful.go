@@ -325,7 +325,6 @@ func (c *GB28181Config) API_play_forward(w http.ResponseWriter, r *http.Request)
 
 // 移动位置订阅
 func (c *GB28181Config) API_position(w http.ResponseWriter, r *http.Request) {
-	//CORS(w, r)
 	query := r.URL.Query()
 	id := query.Get("id")             //设备id
 	expires := query.Get("expires")   //订阅周期(单位：秒)

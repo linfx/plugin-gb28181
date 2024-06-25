@@ -99,8 +99,7 @@ func (c *GB28181Config) RecoverDevice(d *Device, req sip.Request) {
 		Uri:         from.Address,
 	}
 	deviceIp := req.Source()
-	servIp := req.Recipient().Host()
-	//根据网卡ip获取对应的公网ip
+	servIp := req.Recipient().Host() //根据网卡ip获取对应的公网ip
 	sipIP := c.routes[servIp]
 	//如果相等，则服务器是内网通道.海康摄像头不支持...自动获取
 	if strings.LastIndex(deviceIp, ".") != -1 && strings.LastIndex(servIp, ".") != -1 {
@@ -227,8 +226,8 @@ func (d *Device) addOrUpdateChannel(info ChannelInfo) (c *Channel) {
 	return
 }
 
-func (d *Device) deleteChannel(DeviceID string) {
-	d.channelMap.Delete(DeviceID)
+func (d *Device) deleteChannel(deviceID string) {
+	d.channelMap.Delete(deviceID)
 }
 
 // 更新频道
@@ -268,15 +267,15 @@ func (d *Device) UpdateChannels(list ...ChannelInfo) {
 	}
 }
 
-func (d *Device) CreateRequest(Method sip.RequestMethod) (req sip.Request) {
+// 创建请求
+func (d *Device) CreateRequest(method sip.RequestMethod) (req sip.Request) {
 	d.SN++
-
 	callId := sip.CallID(utils.RandNumString(10))
 	userAgent := sip.UserAgentHeader("Monibuca")
 	maxForwards := sip.MaxForwards(70) //增加max-forwards为默认值 70
 	cseq := sip.CSeq{
 		SeqNo:      uint32(d.SN),
-		MethodName: Method,
+		MethodName: method,
 	}
 	port := sip.Port(conf.SipPort)
 	serverAddr := sip.Address{
@@ -290,7 +289,7 @@ func (d *Device) CreateRequest(Method sip.RequestMethod) (req sip.Request) {
 	}
 	req = sip.NewRequest(
 		"",
-		Method,
+		method,
 		d.Addr.Uri,
 		"SIP/2.0",
 		[]sip.Header{
@@ -346,7 +345,6 @@ func (d *Device) Subscribe() int {
 	contentType := sip.ContentType("Application/MANSCDP+xml")
 	request.AppendHeader(&contentType)
 	request.AppendHeader(&expires)
-
 	request.SetBody(BuildCatalogXML(d.SN, d.ID), true)
 
 	response, err := d.SipRequestForResponse(request)
@@ -373,8 +371,8 @@ func (d *Device) Catalog() int {
 	request.AppendHeader(&contentType)
 	request.AppendHeader(&expires)
 	request.SetBody(BuildCatalogXML(d.SN, d.ID), true)
-	// 输出Sip请求设备通道信息信令
-	GB28181Plugin.Sugar().Debugf("SIP->Catalog:%s", request)
+	GB28181Plugin.Sugar().Debugf("SIP->Catalog:%s", request) // 输出Sip请求设备通道信息信令
+
 	resp, err := d.SipRequestForResponse(request)
 	if err == nil && resp != nil {
 		GB28181Plugin.Sugar().Debugf("SIP<-Catalog Response: %s", resp.String())
@@ -423,7 +421,6 @@ func (d *Device) MobilePositionSubscribe(id string, expires time.Duration, inter
 	contentType := sip.ContentType("Application/MANSCDP+xml")
 	mobilePosition.AppendHeader(&contentType)
 	mobilePosition.AppendHeader(&expiresHeader)
-
 	mobilePosition.SetBody(BuildDevicePositionXML(d.SN, id, int(interval/time.Second)), true)
 
 	response, err := d.SipRequestForResponse(mobilePosition)
