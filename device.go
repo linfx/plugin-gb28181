@@ -12,7 +12,6 @@ import (
 
 	"go.uber.org/zap"
 	"m7s.live/engine/v4"
-	"m7s.live/engine/v4/log"
 	"m7s.live/plugin/gb28181/v4/utils"
 
 	"github.com/ghettovoice/gosip/sip"
@@ -20,25 +19,6 @@ import (
 )
 
 const TIME_LAYOUT = "2006-01-02T15:04:05"
-
-// Record 录像
-type Record struct {
-	DeviceID  string
-	Name      string
-	FilePath  string
-	Address   string
-	StartTime string
-	EndTime   string
-	Secrecy   int
-	Type      string
-}
-
-// 预置位
-type Preset struct {
-	DeviceID   string // 设备ID
-	PresetID   int    // 预置位编号
-	PresetName string // 预置位名称
-}
 
 func (r *Record) GetPublishStreamPath() string {
 	return fmt.Sprintf("%s/%s", r.DeviceID, r.StartTime)
@@ -60,33 +40,6 @@ const (
 	DeviceAlarmedStatus  = "ALARMED"
 )
 
-type Device struct {
-	ID              string
-	Name            string
-	Manufacturer    string
-	Model           string
-	Owner           string
-	RegisterTime    time.Time
-	UpdateTime      time.Time
-	LastKeepaliveAt time.Time
-	Status          DeviceStatus
-	SN              int
-	Addr            sip.Address `json:"-" yaml:"-"`
-	SipIP           string      //设备对应网卡的服务器ip
-	MediaIP         string      //设备对应网卡的服务器ip
-	NetAddr         string
-	channelMap      sync.Map
-	subscriber      struct {
-		CallID  string
-		Timeout time.Time
-	}
-	lastSyncTime time.Time
-	GpsTime      time.Time //gps时间
-	Longitude    string    //经度
-	Latitude     string    //纬度
-	*log.Logger  `json:"-" yaml:"-"`
-}
-
 func (d *Device) MarshalJSON() ([]byte, error) {
 	type Alias Device
 	data := &struct {
@@ -101,6 +54,7 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	})
 	return json.Marshal(data)
 }
+
 func (c *GB28181Config) RecoverDevice(d *Device, req sip.Request) {
 	from, _ := req.From()
 	d.Addr = sip.Address{
@@ -185,6 +139,7 @@ func (c *GB28181Config) StoreDevice(id string, req sip.Request) (d *Device) {
 	}
 	return
 }
+
 func (c *GB28181Config) ReadDevices() {
 	if f, err := os.OpenFile("devices.json", os.O_RDONLY, 0644); err == nil {
 		defer f.Close()
@@ -200,6 +155,7 @@ func (c *GB28181Config) ReadDevices() {
 		}
 	}
 }
+
 func (c *GB28181Config) SaveDevices() {
 	var item []any
 	Devices.Range(func(key, value any) bool {

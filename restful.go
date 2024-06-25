@@ -14,6 +14,7 @@ var (
 	playScaleValues = map[float32]bool{0.25: true, 0.5: true, 1: true, 2: true, 4: true}
 )
 
+// 设备列表
 func (c *GB28181Config) API_list(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	if query.Get("interval") == "" {
@@ -72,6 +73,7 @@ func (c *GB28181Config) API_presets(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 设备控制
 func (c *GB28181Config) API_control(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	channel := r.URL.Query().Get("channel")
@@ -149,9 +151,11 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	q := r.URL.Query()
 	id := q.Get("id")
 	channel := q.Get("channel")
-	cmd := q.Get("cmd")       // 控制指令，set, goto, remove
-	preset := q.Get("preset") // 预置位编号(1~255)
-	name := q.Get("name")     // 预置位名称, cmd=set 时有效
+	cmd := q.Get("cmd")         // 控制指令，query, add, remove, setspeed, setstay, start, stop
+	groupid := q.Get("groupid") //巡航组编号(1~255), 适用于 add, remove, setspeed, setstay, start
+	preset := q.Get("preset")   // 预置位编号(1~255)
+	speed := q.Get("speed")     // 巡航速度(1~4095), 适用于 setspeed
+	stay := q.Get("stay")       // 巡航停留时间(秒)(1~4095), 适用于 setstay
 
 	nPreset, err := strconv.ParseUint(preset, 10, 8)
 	if err != nil {
@@ -166,6 +170,7 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// 从设备拉取视频流
 func (c *GB28181Config) API_invite(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id := query.Get("id")
@@ -200,6 +205,7 @@ func (c *GB28181Config) API_invite(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 停止从设备拉流
 func (c *GB28181Config) API_bye(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	channel := r.URL.Query().Get("channel")
@@ -268,6 +274,7 @@ func (c *GB28181Config) API_play_forward(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// 移动位置订阅
 func (c *GB28181Config) API_position(w http.ResponseWriter, r *http.Request) {
 	//CORS(w, r)
 	query := r.URL.Query()
@@ -295,16 +302,8 @@ func (c *GB28181Config) API_position(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type DevicePosition struct {
-	ID        string
-	GpsTime   time.Time //gps时间
-	Longitude string    //经度
-	Latitude  string    //纬度
-}
-
 func (c *GB28181Config) API_get_position(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	//设备id
 	id := query.Get("id")
 	if query.Get("interval") == "" {
 		query.Set("interval", fmt.Sprintf("%ds", c.Position.Interval.Seconds()))
