@@ -308,10 +308,10 @@ func (channel *Channel) Control(PTZCmd string) int {
 	request.AppendHeader(&contentType)
 	body := fmt.Sprintf(`<?xml version="1.0"?>
 		<Control>
-		<CmdType>DeviceControl</CmdType>
-		<SN>%d</SN>
-		<DeviceID>%s</DeviceID>
-		<PTZCmd>%s</PTZCmd>
+			<CmdType>DeviceControl</CmdType>
+			<SN>%d</SN>
+			<DeviceID>%s</DeviceID>
+			<PTZCmd>%s</PTZCmd>
 		</Control>`, d.SN, channel.DeviceID, PTZCmd)
 	request.SetBody(body, true)
 	resp, err := d.SipRequestForResponse(request)
@@ -322,7 +322,7 @@ func (channel *Channel) Control(PTZCmd string) int {
 }
 
 // 设备控制 - 预置位控制
-func (channel *Channel) Control_Preset(cmd string, preset uint8, name string) int {
+func (channel *Channel) Control_Preset(PTZCmd string, preset uint8, name string) int {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
 	contentType := sip.ContentType("Application/MANSCDP+xml")
@@ -331,13 +331,15 @@ func (channel *Channel) Control_Preset(cmd string, preset uint8, name string) in
 	// 构建 XML 请求体
 	body := fmt.Sprintf(`<?xml version="1.0"?>
         <Control>
-        <CmdType>PresetControl</CmdType>
-        <SN>%d</SN>
-        <DeviceID>%s</DeviceID>
-        <PresetIndex>%d</PresetIndex>
-        <PresetName>%s</PresetName>
-        <Command>%s</Command>
-        </Control>`, d.SN, channel.DeviceID, preset, name, cmd)
+			<CmdType>DeviceControl</CmdType>
+			<SN>%d</SN>
+			<DeviceID>%s</DeviceID>
+			<PTZCmd>%s</PTZCmd>
+			<Info>
+				<PresetIndex>%d</PresetIndex>
+				<PresetName>%s</PresetName>
+			</Info>
+        </Control>`, d.SN, channel.DeviceID, PTZCmd, preset, name)
 	request.SetBody(body, true)
 
 	resp, err := d.SipRequestForResponse(request)

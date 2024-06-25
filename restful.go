@@ -115,7 +115,7 @@ func (c *GB28181Config) API_control_ptz(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ptzcmd, err := toPtzStrByCmdName(cmd, uint8(hsN), uint8(vsN), uint8(zsN))
+	ptzcmd, err := toPTZCmdByName(cmd, uint8(hsN), uint8(vsN), uint8(zsN))
 	if err != nil {
 		util.ReturnError(util.APIErrorQueryParse, err.Error(), w, r)
 		return
@@ -156,8 +156,13 @@ func (c *GB28181Config) API_control_preset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	ptzcmd, err := toPTZCmdByName_preset(cmd, uint8(presetN))
+	if err != nil {
+		util.ReturnError(util.APIErrorQueryParse, err.Error(), w, r)
+		return
+	}
 	if c := FindChannel(id, channel); c != nil {
-		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Preset(cmd, uint8(presetN), name)), w, r)
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Preset(ptzcmd, uint8(presetN), name)), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}
