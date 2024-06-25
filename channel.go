@@ -339,21 +339,21 @@ func (channel *Channel) Control_Preset(cmd string, preset uint8, name string) in
 }
 
 // 设备控制 - 巡航控制
-func (channel *Channel) Control_Navigate(cmd string, groupid uint8, preset uint8, speed uint8, stay uint8) int {
+func (channel *Channel) Control_Navigate(cmd string, groupid uint8, preset uint8, speed uint, stay uint) int {
 	d := channel.Device
 	request := d.CreateRequest(sip.MESSAGE)
 	contentType := sip.ContentType("Application/MANSCDP+xml")
 	request.AppendHeader(&contentType)
 
 	// 构建 XML 请求体
-	body := fmt.Sprintf(`<?xml version="1.0"?>
-        <Control>
-			<CmdType>PatrolControl</CmdType>
-			<SN>%d</SN>
-			<DeviceID>%s</DeviceID>
-			<Command>%s</Command>
-        </Control>`, d.SN, channel.DeviceID, preset, name, cmd)
-	request.SetBody(body, true)
+	// body := fmt.Sprintf(`<?xml version="1.0"?>
+	//     <Control>
+	// 		<CmdType>PatrolControl</CmdType>
+	// 		<SN>%d</SN>
+	// 		<DeviceID>%s</DeviceID>
+	// 		<Command>%s</Command>
+	//     </Control>`, d.SN, channel.DeviceID, preset, cmd)
+	// request.SetBody(body, true)
 
 	resp, err := d.SipRequestForResponse(request)
 	if err != nil {

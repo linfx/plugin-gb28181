@@ -157,14 +157,32 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	speed := q.Get("speed")     // 巡航速度(1~4095), 适用于 setspeed
 	stay := q.Get("stay")       // 巡航停留时间(秒)(1~4095), 适用于 setstay
 
+	nGroupid, err := strconv.ParseUint(groupid, 10, 8)
+	if err != nil {
+		util.ReturnError(util.APIErrorQueryParse, "preset parameter is invalid", w, r)
+		return
+	}
+
 	nPreset, err := strconv.ParseUint(preset, 10, 8)
 	if err != nil {
 		util.ReturnError(util.APIErrorQueryParse, "preset parameter is invalid", w, r)
 		return
 	}
 
+	nSpeed, err := strconv.ParseUint(speed, 10, 8)
+	if err != nil {
+		util.ReturnError(util.APIErrorQueryParse, "preset parameter is invalid", w, r)
+		return
+	}
+
+	nStay, err := strconv.ParseUint(stay, 10, 8)
+	if err != nil {
+		util.ReturnError(util.APIErrorQueryParse, "preset parameter is invalid", w, r)
+		return
+	}
+
 	if c := FindChannel(id, channel); c != nil {
-		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Navigate(cmd, uint8(nPreset), name)), w, r)
+		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control_Navigate(cmd, uint8(nGroupid), uint8(nPreset), uint(nSpeed), uint(nStay))), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
 	}

@@ -6,54 +6,6 @@ import (
 	"time"
 )
 
-var (
-	// CatalogXML 获取设备列表xml样式
-	CatalogXML = `<?xml version="1.0"?><Query>
-<CmdType>Catalog</CmdType>
-<SN>%d</SN>
-<DeviceID>%s</DeviceID>
-</Query>
-`
-	// RecordInfoXML 获取录像文件列表xml样式
-	RecordInfoXML = `<?xml version="1.0"?>
-<Query>
-<CmdType>RecordInfo</CmdType>
-<SN>%d</SN>
-<DeviceID>%s</DeviceID>
-<StartTime>%s</StartTime>
-<EndTime>%s</EndTime>
-<Secrecy>0</Secrecy>
-<Type>all</Type>
-</Query>
-`
-	// DeviceInfoXML 查询设备详情xml样式
-	DeviceInfoXML = `<?xml version="1.0"?>
-<Query>
-<CmdType>DeviceInfo</CmdType>
-<SN>%d</SN>
-<DeviceID>%s</DeviceID>
-</Query>
-`
-	// DevicePositionXML 订阅设备位置
-	DevicePositionXML = `<?xml version="1.0"?>
-<Query>
-<CmdType>MobilePosition</CmdType>
-<SN>%d</SN>
-<DeviceID>%s</DeviceID>
-<Interval>%d</Interval>
-</Query>`
-
-	// PresetXML 获取预置位列表
-	PresetXML = `<?xml version="1.0"?>
-<Query>
-<CmdType>Preset</CmdType>
-<SN>%d</SN>
-<DeviceID>%s</DeviceID>
-<StartPoint>%d</StartPoint>
-<MaxResults>%d</MaxResults>
-</Query>`
-)
-
 func intTotime(t int64) time.Time {
 	tstr := strconv.FormatInt(t, 10)
 	if len(tstr) == 10 {
@@ -65,43 +17,93 @@ func intTotime(t int64) time.Time {
 	return time.Now()
 }
 
-// BuildDeviceInfoXML 获取设备详情指令
+// 获取设备详情指令
 func BuildDeviceInfoXML(sn int, id string) string {
-	return fmt.Sprintf(DeviceInfoXML, sn, id)
+
+	// 查询设备详情xml样式
+	xml := `<?xml version="1.0"?>
+	<Query>
+		<CmdType>DeviceInfo</CmdType>
+		<SN>%d</SN>
+		<DeviceID>%s</DeviceID>
+	</Query>`
+
+	return fmt.Sprintf(xml, sn, id)
 }
 
-// BuildCatalogXML 获取NVR下设备列表指令
+// 获取NVR下设备列表指令
 func BuildCatalogXML(sn int, id string) string {
-	return fmt.Sprintf(CatalogXML, sn, id)
+
+	// 获取设备列表xml样式
+	xml := `<?xml version="1.0"?>
+	<Query>
+		<CmdType>Catalog</CmdType>
+		<SN>%d</SN>
+		<DeviceID>%s</DeviceID>
+	</Query>`
+
+	return fmt.Sprintf(xml, sn, id)
 }
 
-// BuildRecordInfoXML 获取录像文件列表指令
+// 获取录像文件列表指令
 func BuildRecordInfoXML(sn int, id string, start, end int64) string {
-	return fmt.Sprintf(RecordInfoXML, sn, id, intTotime(start).Format("2006-01-02T15:04:05"), intTotime(end).Format("2006-01-02T15:04:05"))
+
+	// RecordInfoXML 获取录像文件列表xml样式
+	xml := `<?xml version="1.0"?>
+	<Query>
+		<CmdType>RecordInfo</CmdType>
+		<SN>%d</SN>
+		<DeviceID>%s</DeviceID>
+		<StartTime>%s</StartTime>
+		<EndTime>%s</EndTime>
+		<Secrecy>0</Secrecy>
+		<Type>all</Type>
+	</Query>`
+
+	return fmt.Sprintf(xml, sn, id, intTotime(start).Format("2006-01-02T15:04:05"), intTotime(end).Format("2006-01-02T15:04:05"))
 }
 
-// BuildDevicePositionXML 订阅设备位置
+// 订阅设备位置
 func BuildDevicePositionXML(sn int, id string, interval int) string {
-	return fmt.Sprintf(DevicePositionXML, sn, id, interval)
+
+	// DevicePositionXML 订阅设备位置
+	xml := `<?xml version="1.0"?>
+	<Query>
+		<CmdType>MobilePosition</CmdType>
+		<SN>%d</SN>
+		<DeviceID>%s</DeviceID>
+		<Interval>%d</Interval>
+	</Query>`
+
+	return fmt.Sprintf(xml, sn, id, interval)
 }
 
-// AlarmResponseXML alarm response xml样式
-var (
-	AlarmResponseXML = `<?xml version="1.0"?>
-<Response>
-<CmdType>Alarm</CmdType>
-<SN>17430</SN>
-<DeviceID>%s</DeviceID>
-</Response>
-`
-)
-
-// BuildRecordInfoXML 获取录像文件列表指令
+// 获取录像文件列表指令
 func BuildAlarmResponseXML(id string) string {
-	return fmt.Sprintf(AlarmResponseXML, id)
+
+	// alarm response xml样式
+	xml := `<?xml version="1.0"?>
+	<Response>
+		<CmdType>Alarm</CmdType>
+		<SN>17430</SN>
+		<DeviceID>%s</DeviceID>
+	</Response>`
+
+	return fmt.Sprintf(xml, id)
 }
 
 // 获取预置位列表
 func BuildPresetXML(sn int, id string, startPoint string, maxResults string) string {
-	return fmt.Sprintf(PresetXML, sn, id, startPoint, maxResults)
+
+	// 获取预置位列表
+	xml := `<?xml version="1.0"?>
+	<Query>
+		<CmdType>Preset</CmdType>
+		<SN>%d</SN>
+		<DeviceID>%s</DeviceID>
+		<StartPoint>%s</StartPoint>
+		<MaxResults>%s</MaxResults>
+	</Query>`
+
+	return fmt.Sprintf(xml, sn, id, startPoint, maxResults)
 }
