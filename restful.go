@@ -296,12 +296,9 @@ func (c *GB28181Config) API_play_forward(w http.ResponseWriter, r *http.Request)
 func (c *GB28181Config) API_position(w http.ResponseWriter, r *http.Request) {
 	//CORS(w, r)
 	query := r.URL.Query()
-	//设备id
-	id := query.Get("id")
-	//订阅周期(单位：秒)
-	expires := query.Get("expires")
-	//订阅间隔（单位：秒）
-	interval := query.Get("interval")
+	id := query.Get("id")             //设备id
+	expires := query.Get("expires")   //订阅周期(单位：秒)
+	interval := query.Get("interval") //订阅间隔（单位：秒）
 
 	expiresInt, err := time.ParseDuration(expires)
 	if expires == "" || err != nil {
