@@ -222,6 +222,7 @@ func (c *GB28181Config) OnRegister(req sip.Request, tx sip.ServerTransaction) {
 	}
 }
 
+// 终止会话
 func (c *GB28181Config) OnBye(req sip.Request, tx sip.ServerTransaction) {
 	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", ""))
 }
@@ -303,9 +304,9 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			d.Model = temp.Model
 		case "Alarm":
 			// Alarm 命令, 将设备状态设置为报警状态,并生成报警响应消息
-			d.Status = DeviceAlarmedStatus
-			body = BuildAlarmResponseXML(d.ID)
 			d.Info("OnMessage -> Alarm")
+			d.Status = DeviceAlarmedStatus
+			body = BuildAlarmResponseXML(d.SN, d.ID)
 		case "Broadcast":
 			GB28181Plugin.Info("broadcast message", zap.String("body", req.Body()))
 		case "DeviceControl":
@@ -326,7 +327,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 	}
 }
 
-// OnNotify 订阅通知处理
+// SIP 事件通知
 func (c *GB28181Config) OnNotify(req sip.Request, tx sip.ServerTransaction) {
 	from, ok := req.From()
 	if !ok || from.Address == nil || from.Address.User() == nil {

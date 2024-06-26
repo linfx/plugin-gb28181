@@ -89,17 +89,17 @@ func BuildRecordInfoXML(sn int, id string, start, end int64) string {
 }
 
 // 报警订阅结果指令
-func BuildAlarmResponseXML(id string) string {
+func BuildAlarmResponseXML(sn int, id string) string {
 
 	// alarm response xml样式
 	xml := `<?xml version="1.0"?>
 	<Response>
 		<CmdType>Alarm</CmdType>
-		<SN>17430</SN>
+		<SN>%d</SN>
 		<DeviceID>%s</DeviceID>
 	</Response>`
 
-	return fmt.Sprintf(xml, id)
+	return fmt.Sprintf(xml, sn, id)
 }
 
 // 获取预置位列表
