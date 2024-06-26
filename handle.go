@@ -303,7 +303,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			d.Manufacturer = temp.Manufacturer
 			d.Model = temp.Model
 		case "Alarm":
-			// Alarm 命令, 将设备状态设置为报警状态,并生成报警响应消息
+			// Alarm 命令, 将设备状态设置为报警状态, 并生成报警响应消息
 			d.Info("OnMessage -> Alarm")
 			d.Status = DeviceAlarmedStatus
 			body = BuildAlarmResponseXML(d.SN, d.ID)
@@ -317,10 +317,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			tx.Respond(response)
 			return
 		}
-		EmitEvent(MessageEvent{
-			Type:   temp.CmdType,
-			Device: d,
-		})
+		EmitEvent(MessageEvent{Type: temp.CmdType, Device: d})
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", body))
 	} else {
 		GB28181Plugin.Debug("Unauthorized message, device not found", zap.String("id", id))
@@ -375,9 +372,7 @@ func (c *GB28181Config) OnNotify(req sip.Request, tx sip.ServerTransaction) {
 			tx.Respond(response)
 			return
 		}
-		EmitEvent(NotifyEvent{
-			Type:   temp.CmdType,
-			Device: d})
+		EmitEvent(NotifyEvent{Type: temp.CmdType, Device: d})
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", body))
 	}
 }
