@@ -333,8 +333,8 @@ func (d *Device) CreateRequest(method sip.RequestMethod) (req sip.Request) {
 	return
 }
 
-// 设备订阅
-func (d *Device) Subscribe() int {
+// 目录订阅
+func (d *Device) Subscribe_catalog() int {
 	request := d.CreateRequest(sip.SUBSCRIBE)
 	if d.subscriber.CallID != "" {
 		callId := sip.CallID(utils.RandNumString(10))
@@ -355,6 +355,63 @@ func (d *Device) Subscribe() int {
 		} else {
 			d.subscriber.CallID = ""
 		}
+		d.Info("Subscribe_catalog", zap.Uint16("status code", uint16(response.StatusCode())))
+		return int(response.StatusCode())
+	}
+	return http.StatusRequestTimeout
+}
+
+// 报警订阅
+func (d *Device) Subscribe_alarm() int {
+	request := d.CreateRequest(sip.SUBSCRIBE)
+	if d.subscriber.CallID != "" {
+		callId := sip.CallID(utils.RandNumString(10))
+		request.ReplaceHeaders(callId.Name(), []sip.Header{&callId})
+	}
+	expires := sip.Expires(3600)
+	d.subscriber.Timeout = time.Now().Add(time.Second * time.Duration(expires))
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+	request.AppendHeader(&expires)
+	request.SetBody(BuildAlarmXML(d.SN, d.ID), true)
+
+	response, err := d.SipRequestForResponse(request)
+	if err == nil && response != nil {
+		if response.StatusCode() == http.StatusOK {
+			callId, _ := request.CallID()
+			d.subscriber.CallID = callId.String()
+		} else {
+			d.subscriber.CallID = ""
+		}
+		d.Info("Subscribe_alarm", zap.Uint16("status code", uint16(response.StatusCode())))
+		return int(response.StatusCode())
+	}
+	return http.StatusRequestTimeout
+}
+
+// 移动位置订阅
+func (d *Device) Subscribe_position(id string, expires time.Duration, interval time.Duration) (code int) {
+	request := d.CreateRequest(sip.SUBSCRIBE)
+	if d.subscriber.CallID != "" {
+		callId := sip.CallID(utils.RandNumString(10))
+		request.ReplaceHeaders(callId.Name(), []sip.Header{&callId})
+	}
+	expiresHeader := sip.Expires(expires / time.Second)
+	d.subscriber.Timeout = time.Now().Add(expires)
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+	request.AppendHeader(&expiresHeader)
+	request.SetBody(BuildDevicePositionXML(d.SN, id, int(interval/time.Second)), true)
+
+	response, err := d.SipRequestForResponse(request)
+	if err == nil && response != nil {
+		if response.StatusCode() == http.StatusOK {
+			callId, _ := request.CallID()
+			d.subscriber.CallID = callId.String()
+		} else {
+			d.subscriber.CallID = ""
+		}
+		d.Info("Subscribe_position", zap.Uint16("status code", uint16(response.StatusCode())))
 		return int(response.StatusCode())
 	}
 	return http.StatusRequestTimeout
@@ -407,33 +464,6 @@ func (d *Device) QueryDeviceInfo() {
 			}
 		}
 	}
-}
-
-// 移动位置订阅
-func (d *Device) MobilePositionSubscribe(id string, expires time.Duration, interval time.Duration) (code int) {
-	mobilePosition := d.CreateRequest(sip.SUBSCRIBE)
-	if d.subscriber.CallID != "" {
-		callId := sip.CallID(utils.RandNumString(10))
-		mobilePosition.ReplaceHeaders(callId.Name(), []sip.Header{&callId})
-	}
-	expiresHeader := sip.Expires(expires / time.Second)
-	d.subscriber.Timeout = time.Now().Add(expires)
-	contentType := sip.ContentType("Application/MANSCDP+xml")
-	mobilePosition.AppendHeader(&contentType)
-	mobilePosition.AppendHeader(&expiresHeader)
-	mobilePosition.SetBody(BuildDevicePositionXML(d.SN, id, int(interval/time.Second)), true)
-
-	response, err := d.SipRequestForResponse(mobilePosition)
-	if err == nil && response != nil {
-		if response.StatusCode() == http.StatusOK {
-			callId, _ := mobilePosition.CallID()
-			d.subscriber.CallID = callId.String()
-		} else {
-			d.subscriber.CallID = ""
-		}
-		return int(response.StatusCode())
-	}
-	return http.StatusRequestTimeout
 }
 
 // 向设备发送请求并获取响应

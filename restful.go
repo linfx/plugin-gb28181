@@ -210,7 +210,7 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// 设备控制 - 布防撤防
+// 设备控制 - 通道布防
 func (c *GB28181Config) API_control_guard(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	id := q.Get("id")
@@ -324,10 +324,10 @@ func (c *GB28181Config) API_play_forward(w http.ResponseWriter, r *http.Request)
 }
 
 // 移动位置订阅
-func (c *GB28181Config) API_position(w http.ResponseWriter, r *http.Request) {
+func (c *GB28181Config) API_subscribe_position(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id := query.Get("id")             //设备id
-	expires := query.Get("expires")   //订阅周期(单位：秒)
+	expires := query.Get("expires")   //订阅周期 (单位：秒)
 	interval := query.Get("interval") //订阅间隔（单位：秒）
 
 	expiresInt, err := time.ParseDuration(expires)
@@ -341,7 +341,7 @@ func (c *GB28181Config) API_position(w http.ResponseWriter, r *http.Request) {
 
 	if v, ok := Devices.Load(id); ok {
 		d := v.(*Device)
-		util.ReturnError(0, fmt.Sprintf("mobileposition code:%d", d.MobilePositionSubscribe(id, expiresInt, intervalInt)), w, r)
+		util.ReturnError(0, fmt.Sprintf("mobileposition code:%d", d.Subscribe_position(id, expiresInt, intervalInt)), w, r)
 	} else {
 		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q  not found", id), w, r)
 	}

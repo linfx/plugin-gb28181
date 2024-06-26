@@ -118,6 +118,41 @@ http 200 表示成功，404流不存在
 | channel | 是   | 通道编号    |
 | ptzcmd  | 是   | PTZ控制指令 |
 
+### 设备控制 - 云台控制
+
+`/gb28181/api/control/ptz`
+
+| 参数名  | 必传 | 含义        |
+| ------- | ---- | ----------- |
+| id      | 是   | 设备ID      |
+| channel | 是   | 通道编号    |
+| cmd     | 是   | 控制指令: stop,right,left,down,downright,downleft,up,upright,upleft,zoomin,zoomout |
+| hSpeed  | 否   | 水平速度 |
+| vSpeed  | 否   | 垂直速度 |
+| zSpeed  | 否   | 缩放速度 |
+
+### 设备控制 - 预置位控制
+
+`/gb28181/api/control/preset`
+
+| 参数名  | 必传 | 含义        |
+| ------- | ---- | ----------- |
+| id      | 是   | 设备ID       |
+| channel | 是   | 通道编号     |
+| ptzcmd  | 是   | PTZ控制指令  |
+| preset  | 是   | 预置位编号(1~255)
+| name    | 是   | 预置位名称, cmd=set 时有效 |
+
+### 设备控制 - 布防撤防
+
+`/gb28181/api/control/guard`
+
+| 参数名  | 必传 | 含义        |
+| ------- | ---- | ----------- |
+| id      | 是   | 设备ID       |
+| channel | 是   | 通道编号     |
+| cmd     | 是   | 控制指令: SetGuard, ResetGuard  |
+
 ### 查询录像
 
 `/gb28181/api/records`

@@ -17,32 +17,57 @@ func intTotime(t int64) time.Time {
 	return time.Now()
 }
 
-// 获取设备详情指令
-func BuildDeviceInfoXML(sn int, id string) string {
+// 获取设备控制指令
+func BuildControlXML(cmd string, sn int, id string) string {
 
-	// 查询设备详情xml样式
 	xml := `<?xml version="1.0"?>
 	<Query>
-		<CmdType>DeviceInfo</CmdType>
+		<CmdType>%s</CmdType>
 		<SN>%d</SN>
 		<DeviceID>%s</DeviceID>
+	</Query>`
+
+	return fmt.Sprintf(xml, cmd, sn, id)
+}
+
+// 获取设备详情指令
+func BuildDeviceInfoXML(sn int, id string) string {
+	return BuildControlXML("DeviceInfo", sn, id)
+}
+
+// 获取NVR下设备列表指令
+func BuildCatalogXML(sn int, id string) string {
+	return BuildControlXML("Catalog", sn, id)
+}
+
+// 报警订阅
+func BuildAlarmXML(sn int, id string) string {
+
+	xml := `<?xml version="1.0"?>
+	<Query>
+		<CmdType>Alarm</CmdType>
+		<SN>%d</SN>
+		<DeviceID>%s</DeviceID>
+		<StartAlarmPriority>1</StartAlarmPriority>
+		<EndAlarmPriority>4</EndAlarmPriority>
+		<AlarmMethod>0</AlarmMethod>
 	</Query>`
 
 	return fmt.Sprintf(xml, sn, id)
 }
 
-// 获取NVR下设备列表指令
-func BuildCatalogXML(sn int, id string) string {
+// 移动位置订阅
+func BuildDevicePositionXML(sn int, id string, interval int) string {
 
-	// 获取设备列表xml样式
 	xml := `<?xml version="1.0"?>
 	<Query>
-		<CmdType>Catalog</CmdType>
+		<CmdType>MobilePosition</CmdType>
 		<SN>%d</SN>
 		<DeviceID>%s</DeviceID>
+		<Interval>%d</Interval>
 	</Query>`
 
-	return fmt.Sprintf(xml, sn, id)
+	return fmt.Sprintf(xml, sn, id, interval)
 }
 
 // 获取录像文件列表指令
@@ -63,22 +88,7 @@ func BuildRecordInfoXML(sn int, id string, start, end int64) string {
 	return fmt.Sprintf(xml, sn, id, intTotime(start).Format("2006-01-02T15:04:05"), intTotime(end).Format("2006-01-02T15:04:05"))
 }
 
-// 订阅设备位置
-func BuildDevicePositionXML(sn int, id string, interval int) string {
-
-	// DevicePositionXML 订阅设备位置
-	xml := `<?xml version="1.0"?>
-	<Query>
-		<CmdType>MobilePosition</CmdType>
-		<SN>%d</SN>
-		<DeviceID>%s</DeviceID>
-		<Interval>%d</Interval>
-	</Query>`
-
-	return fmt.Sprintf(xml, sn, id, interval)
-}
-
-// 获取录像文件列表指令
+// 报警订阅结果指令
 func BuildAlarmResponseXML(id string) string {
 
 	// alarm response xml样式

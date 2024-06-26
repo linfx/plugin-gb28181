@@ -18,6 +18,32 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
+type notifyMessage struct {
+	DeviceID     string
+	ParentID     string
+	Name         string
+	Manufacturer string
+	Model        string
+	Owner        string
+	CivilCode    string
+	Address      string
+	Port         int
+	Parental     int
+	SafetyWay    int
+	RegisterWay  int
+	Secrecy      int
+	Status       string
+	//状态改变事件 ON:上线,OFF:离线,VLOST:视频丢失,DEFECT:故障,ADD:增加,DEL:删除,UPDATE:更新(必选)
+	Event string
+}
+
+type MessageEvent struct {
+	Type   string
+	Device *Device
+}
+
+type NotifyEvent MessageEvent
+
 type Authorization struct {
 	*sip.Authorization
 }
@@ -52,6 +78,18 @@ func (a *Authorization) getDigest(raw string) string {
 	}
 }
 
+// 同步设备信息、下属通道信息，包括主动查询通道信息，订阅通道变化情况
+func (d *Device) syncChannels() {
+	if time.Since(d.lastSyncTime) > 2*conf.HeartbeatInterval {
+		d.lastSyncTime = time.Now()
+		d.Catalog()
+		d.Subscribe_catalog() // 目录订阅
+		d.Subscribe_alarm()   // 报警订阅
+		d.QueryDeviceInfo()
+	}
+}
+
+// 注册
 func (c *GB28181Config) OnRegister(req sip.Request, tx sip.ServerTransaction) {
 	from, ok := req.From()
 	if !ok || from.Address == nil || from.Address.User() == nil {
@@ -184,19 +222,8 @@ func (c *GB28181Config) OnRegister(req sip.Request, tx sip.ServerTransaction) {
 	}
 }
 
-// 同步设备信息、下属通道信息，包括主动查询通道信息，订阅通道变化情况
-func (d *Device) syncChannels() {
-	if time.Since(d.lastSyncTime) > 2*conf.HeartbeatInterval {
-		d.lastSyncTime = time.Now()
-		d.Catalog()
-		d.Subscribe()
-		d.QueryDeviceInfo()
-	}
-}
-
-type MessageEvent struct {
-	Type   string
-	Device *Device
+func (c *GB28181Config) OnBye(req sip.Request, tx sip.ServerTransaction) {
+	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", ""))
 }
 
 // SIP 消息处理
@@ -260,9 +287,9 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 					return true
 				})
 			}
-			//在KeepLive 进行位置订阅的处理，如果开启了自动订阅位置，则去订阅位置
+			// 在 KeepLive 进行位置订阅的处理，如果开启了自动订阅位置，则去订阅位置
 			if c.Position.AutosubPosition && time.Since(d.GpsTime) > c.Position.Interval*2 {
-				d.MobilePositionSubscribe(d.ID, c.Position.Expires, c.Position.Interval)
+				d.Subscribe_position(d.ID, c.Position.Expires, c.Position.Interval)
 				GB28181Plugin.Debug("Mobile Position Subscribe", zap.String("deviceID", d.ID))
 			}
 		case "Catalog":
@@ -278,6 +305,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			// Alarm 命令, 将设备状态设置为报警状态,并生成报警响应消息
 			d.Status = DeviceAlarmedStatus
 			body = BuildAlarmResponseXML(d.ID)
+			d.Info("OnMessage -> Alarm")
 		case "Broadcast":
 			GB28181Plugin.Info("broadcast message", zap.String("body", req.Body()))
 		case "DeviceControl":
@@ -297,12 +325,6 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 		GB28181Plugin.Debug("Unauthorized message, device not found", zap.String("id", id))
 	}
 }
-
-func (c *GB28181Config) OnBye(req sip.Request, tx sip.ServerTransaction) {
-	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", ""))
-}
-
-type NotifyEvent MessageEvent
 
 // OnNotify 订阅通知处理
 func (c *GB28181Config) OnNotify(req sip.Request, tx sip.ServerTransaction) {
@@ -357,23 +379,4 @@ func (c *GB28181Config) OnNotify(req sip.Request, tx sip.ServerTransaction) {
 			Device: d})
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", body))
 	}
-}
-
-type notifyMessage struct {
-	DeviceID     string
-	ParentID     string
-	Name         string
-	Manufacturer string
-	Model        string
-	Owner        string
-	CivilCode    string
-	Address      string
-	Port         int
-	Parental     int
-	SafetyWay    int
-	RegisterWay  int
-	Secrecy      int
-	Status       string
-	//状态改变事件 ON:上线,OFF:离线,VLOST:视频丢失,DEFECT:故障,ADD:增加,DEL:删除,UPDATE:更新(必选)
-	Event string
 }
