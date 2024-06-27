@@ -249,70 +249,6 @@ func (channel *Channel) CreateRequst(Method sip.RequestMethod) (req sip.Request)
 	return req
 }
 
-// 录像查询
-func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error) {
-	d := channel.Device
-	request := d.CreateRequest(sip.MESSAGE)
-	contentType := sip.ContentType("Application/MANSCDP+xml")
-	request.AppendHeader(&contentType)
-	start, _ := strconv.ParseInt(startTime, 10, 0)
-	end, _ := strconv.ParseInt(endTime, 10, 0)
-	body := BuildRecordInfoXML(d.SN, channel.DeviceID, start, end)
-	request.SetBody(body, true)
-
-	resultCh := RecordQueryLink.WaitResult(d.ID, channel.DeviceID, d.SN, QUERY_RECORD_TIMEOUT)
-	resp, err := d.SipRequestForResponse(request)
-	if err != nil {
-		return nil, fmt.Errorf("query error: %s", err)
-	}
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("query error, status=%d", resp.StatusCode())
-	}
-	// RecordQueryLink 中加了超时机制，该结果一定会返回
-	// 所以此处不用再增加超时等保护机制
-	r := <-resultCh
-	return r.list, r.err
-}
-
-// 查询预置位
-func (channel *Channel) QueryPreset() ([]*Preset, error) {
-	d := channel.Device
-	request := d.CreateRequest(sip.MESSAGE)
-	contentType := sip.ContentType("Application/MANSCDP+xml")
-	request.AppendHeader(&contentType)
-	request.SetBody(BuildPresetXML(d.SN, channel.DeviceID), true)
-
-	resp, err := d.SipRequestForResponse(request)
-	if err != nil {
-		return nil, fmt.Errorf("query error: %s", err)
-	}
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("query error, status=%d", resp.StatusCode())
-	}
-
-	// 解析响应的 XML 内容
-	var data map[string]interface{}
-	err = xml.Unmarshal([]byte(resp.Body()), &data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal preset response: %v", err)
-	}
-
-	presetList := data["PresetList"].(map[string]interface{})
-	presetItems := presetList["Item"].([]interface{})
-
-	var presets []*Preset
-	for _, item := range presetItems {
-		presetItem := item.(map[string]interface{})
-		preset := &Preset{
-			PresetID:   int(presetItem["PresetID"].(float64)),
-			PresetName: presetItem["PresetName"].(string),
-		}
-		presets = append(presets, preset)
-	}
-
-	return presets, nil
-}
-
 // 设备控制
 func (channel *Channel) Control(PTZCmd string) int {
 	d := channel.Device
@@ -408,6 +344,70 @@ func (channel *Channel) Control_Guard(cmd string) int {
 		return http.StatusRequestTimeout
 	}
 	return int(resp.StatusCode())
+}
+
+// 录像查询
+func (channel *Channel) QueryRecord(startTime, endTime string) ([]*Record, error) {
+	d := channel.Device
+	request := d.CreateRequest(sip.MESSAGE)
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+	start, _ := strconv.ParseInt(startTime, 10, 0)
+	end, _ := strconv.ParseInt(endTime, 10, 0)
+	body := BuildRecordInfoXML(d.SN, channel.DeviceID, start, end)
+	request.SetBody(body, true)
+
+	resultCh := RecordQueryLink.WaitResult(d.ID, channel.DeviceID, d.SN, QUERY_RECORD_TIMEOUT)
+	resp, err := d.SipRequestForResponse(request)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %s", err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("query error, status=%d", resp.StatusCode())
+	}
+	// RecordQueryLink 中加了超时机制，该结果一定会返回
+	// 所以此处不用再增加超时等保护机制
+	r := <-resultCh
+	return r.list, r.err
+}
+
+// 查询预置位
+func (channel *Channel) QueryPreset() ([]*Preset, error) {
+	d := channel.Device
+	request := d.CreateRequest(sip.MESSAGE)
+	contentType := sip.ContentType("Application/MANSCDP+xml")
+	request.AppendHeader(&contentType)
+	request.SetBody(BuildPresetXML(d.SN, channel.DeviceID), true)
+
+	resp, err := d.SipRequestForResponse(request)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %s", err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("query error, status=%d", resp.StatusCode())
+	}
+
+	// 解析响应的 XML 内容
+	var data map[string]interface{}
+	err = xml.Unmarshal([]byte(resp.Body()), &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal preset response: %v", err)
+	}
+
+	presetList := data["PresetList"].(map[string]interface{})
+	presetItems := presetList["Item"].([]interface{})
+
+	var presets []*Preset
+	for _, item := range presetItems {
+		presetItem := item.(map[string]interface{})
+		preset := &Preset{
+			PresetID:   int(presetItem["PresetID"].(float64)),
+			PresetName: presetItem["PresetName"].(string),
+		}
+		presets = append(presets, preset)
+	}
+
+	return presets, nil
 }
 
 // Invite 发送Invite报文 invites a channel to play

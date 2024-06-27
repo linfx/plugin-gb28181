@@ -4,10 +4,10 @@ import "fmt"
 
 var (
 	name2code = map[string]uint8{
-		"stop":      0,
-		"right":     1,
-		"left":      2,
-		"down":      4,
+		"stop":      0, // 停止
+		"right":     1, // 右转
+		"left":      2, // 左转
+		"down":      4, // 下转
 		"downright": 5,
 		"downleft":  6,
 		"up":        8,

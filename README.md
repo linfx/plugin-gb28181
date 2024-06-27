@@ -127,9 +127,9 @@ http 200 表示成功，404流不存在
 | id      | 是   | 设备ID      |
 | channel | 是   | 通道编号    |
 | cmd     | 是   | 控制指令: stop,right,left,down,downright,downleft,up,upright,upleft,zoomin,zoomout |
-| hSpeed  | 否   | 水平速度 |
-| vSpeed  | 否   | 垂直速度 |
-| zSpeed  | 否   | 缩放速度 |
+| hSpeed  | 否   | 水平速度    |
+| vSpeed  | 否   | 垂直速度    |
+| zSpeed  | 否   | 缩放速度    |
 
 ### 设备控制 - 预置位控制
 

@@ -104,11 +104,13 @@ func (c *GB28181Config) API_control_ptz(w http.ResponseWriter, r *http.Request) 
 		util.ReturnError(util.APIErrorQueryParse, "hSpeed parameter is invalid", w, r)
 		return
 	}
+
 	vsN, err := strconv.ParseUint(vs, 10, 8)
 	if err != nil {
 		util.ReturnError(util.APIErrorQueryParse, "vSpeed parameter is invalid", w, r)
 		return
 	}
+
 	zsN, err := strconv.ParseUint(zs, 10, 8)
 	if err != nil {
 		util.ReturnError(util.APIErrorQueryParse, "zSpeed parameter is invalid", w, r)
@@ -120,6 +122,7 @@ func (c *GB28181Config) API_control_ptz(w http.ResponseWriter, r *http.Request) 
 		util.ReturnError(util.APIErrorQueryParse, err.Error(), w, r)
 		return
 	}
+
 	if c := FindChannel(id, channel); c != nil {
 		util.ReturnError(0, fmt.Sprintf("control code:%d", c.Control(ptzcmd)), w, r)
 	} else {
