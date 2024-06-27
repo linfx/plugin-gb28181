@@ -1,6 +1,7 @@
 package gb28181
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -159,7 +160,6 @@ type Record struct {
 
 // 预置位
 type Preset struct {
-	DeviceID   string // 设备ID
 	PresetID   int    // 预置位编号
 	PresetName string // 预置位名称
 }
@@ -280,8 +280,7 @@ func (channel *Channel) QueryPreset() ([]*Preset, error) {
 	request := d.CreateRequest(sip.MESSAGE)
 	contentType := sip.ContentType("Application/MANSCDP+xml")
 	request.AppendHeader(&contentType)
-	body := BuildPresetXML(d.SN, channel.DeviceID)
-	request.SetBody(body, true)
+	request.SetBody(BuildPresetXML(d.SN, channel.DeviceID), true)
 
 	resp, err := d.SipRequestForResponse(request)
 	if err != nil {
@@ -292,11 +291,25 @@ func (channel *Channel) QueryPreset() ([]*Preset, error) {
 	}
 
 	// 解析响应的 XML 内容
+	var data map[string]interface{}
+	err = xml.Unmarshal([]byte(resp.Body()), &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal preset response: %v", err)
+	}
+
+	presetList := data["PresetList"].(map[string]interface{})
+	presetItems := presetList["Item"].([]interface{})
+
 	var presets []*Preset
-	// err = xml.Unmarshal(respBody, &resp)
-	// if err != nil {
-	//     return nil, fmt.Errorf("failed to unmarshal preset response: %v", err)
-	// }
+	for _, item := range presetItems {
+		presetItem := item.(map[string]interface{})
+		preset := &Preset{
+			PresetID:   int(presetItem["PresetID"].(float64)),
+			PresetName: presetItem["PresetName"].(string),
+		}
+		presets = append(presets, preset)
+	}
+
 	return presets, nil
 }
 
