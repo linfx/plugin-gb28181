@@ -38,8 +38,9 @@ type notifyMessage struct {
 }
 
 type MessageEvent struct {
-	Type   string
-	Device *Device
+	Type    string
+	Device  *Device
+	Message string
 }
 
 type NotifyEvent MessageEvent
@@ -293,6 +294,8 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 				d.Subscribe_position(d.ID, c.Position.Expires, c.Position.Interval)
 				GB28181Plugin.Debug("Mobile Position Subscribe", zap.String("deviceID", d.ID))
 			}
+			d.Debug("OnMessage -> Keepalive", zap.String("body", body))
+			EmitEvent(MessageEvent{Type: temp.CmdType, Device: d})
 		case "Catalog":
 			d.UpdateChannels(temp.DeviceList...)
 		case "RecordInfo":
@@ -304,9 +307,11 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			d.Model = temp.Model
 		case "Alarm":
 			// Alarm 命令, 将设备状态设置为报警状态, 并生成报警响应消息
-			d.Info("OnMessage -> Alarm")
+			body = req.Body()
 			d.Status = DeviceAlarmedStatus
-			body = BuildAlarmResponseXML(d.SN, d.ID)
+			d.Info("OnMessage -> Alarm", zap.String("body", body))
+			EmitEvent(MessageEvent{Type: temp.CmdType, Device: d, Message: body})
+			tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", BuildAlarmResponseXML(d.SN, d.ID)))
 		case "Broadcast":
 			GB28181Plugin.Info("broadcast message", zap.String("body", req.Body()))
 		case "DeviceControl":
@@ -317,8 +322,6 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			tx.Respond(response)
 			return
 		}
-		EmitEvent(MessageEvent{Type: temp.CmdType, Device: d})
-		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", body))
 	} else {
 		GB28181Plugin.Debug("Unauthorized message, device not found", zap.String("id", id))
 	}
