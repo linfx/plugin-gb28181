@@ -61,6 +61,40 @@ type DevicePosition struct {
 	Latitude  string    //纬度
 }
 
+/**
+* AlarmType报警类型,
+* AlarmMethod报警方式为2时,不携带 AlarmType为默认的报警设备报警,
+* 携带 AlarmType取值及对应报警类型如下:
+* 1-视频丢失报警;
+* 2-设备防拆报警;
+* 3-存储设备磁盘满报警;
+* 4-设备高温报警;
+* 5-设备低温报警。
+* 报警方式为5时,取值如下:
+* 1-人工视频报警;
+* 2-运动目标检测报警;
+* 3-遗留物检测报警;
+* 4-物体移除检测报警;
+* 5-绊线检测报警;
+* 6-入侵检测报警;
+* 7-逆行检测报警;
+* 8-徘徊检测报警;
+* 9-流量统计报警;
+* 10-密度检测报警;
+* 11-视频异常检测报警;
+* 12-快速移动报警。
+* 报警方式为6时,取值下:
+* 1-存储设备磁盘故障报警;
+* 2-存储设备风扇故障报警。
+ */
+type Alarm struct {
+	AlarmPriority    int       // 警报等级 1为一级警情, 2为二级警情, 3为三级警情, 4为四级警情
+	AlarmMethod      int       // 警报方法
+	AlarmTime        time.Time // 警报时间
+	AlarmDescription string    // 警报描述
+	AlarmInfo        string
+}
+
 var (
 	Devices             sync.Map
 	DeviceNonce         sync.Map //保存nonce防止设备伪造
