@@ -88,10 +88,10 @@ type DevicePosition struct {
 * 2-存储设备风扇故障报警。
  */
 type Alarm struct {
-	AlarmPriority    int       // 警报等级 1为一级警情, 2为二级警情, 3为三级警情, 4为四级警情
-	AlarmMethod      int       // 警报方法
-	AlarmTime        time.Time // 警报时间
-	AlarmDescription string    // 警报描述
+	AlarmPriority    int    // 警报等级 1为一级警情, 2为二级警情, 3为三级警情, 4为四级警情
+	AlarmMethod      int    // 警报方法
+	AlarmTime        string // 警报时间
+	AlarmDescription string // 警报描述
 	AlarmInfo        string
 }
 

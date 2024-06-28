@@ -40,7 +40,7 @@ type notifyMessage struct {
 type MessageEvent struct {
 	Type    string
 	Device  *Device
-	Message string
+	Message interface{}
 }
 
 type NotifyEvent MessageEvent
@@ -310,8 +310,18 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			body = req.Body()
 			d.Status = DeviceAlarmedStatus
 			d.Info("OnMessage -> Alarm", zap.String("body", body))
-			EmitEvent(MessageEvent{Type: temp.CmdType, Device: d, Message: body})
 			tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", BuildAlarmResponseXML(d.SN, d.ID)))
+
+			// 解码 XML 数据到 Alarm 结构体
+			alarm := &Alarm{}
+			err := decoder.Decode(alarm)
+			if err != nil {
+				err = utils.DecodeGbk(alarm, []byte(req.Body()))
+				if err != nil {
+					GB28181Plugin.Error("decode catelog err", zap.Error(err))
+				}
+			}
+			EmitEvent(MessageEvent{Type: temp.CmdType, Device: d, Message: alarm})
 		case "Broadcast":
 			GB28181Plugin.Info("broadcast message", zap.String("body", req.Body()))
 		case "DeviceControl":
