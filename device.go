@@ -61,16 +61,21 @@ type DevicePosition struct {
 	Latitude  string    //纬度
 }
 
-/**
-* AlarmType报警类型,
-* AlarmMethod报警方式为2时,不携带 AlarmType为默认的报警设备报警,
+/*
+*
+* AlarmType 报警类型,
+
+	报警方式 AlarmMethod：1为电话报警， 2为设备报警， 3为短信报警， 4为GPS报警， 5为视频报警， 6为设备故障报警， 7其他报警
+
+* 报警方式 AlarmMethod 为2时,不携带 AlarmType为默认的报警设备报警,
 * 携带 AlarmType取值及对应报警类型如下:
 * 1-视频丢失报警;
 * 2-设备防拆报警;
 * 3-存储设备磁盘满报警;
 * 4-设备高温报警;
 * 5-设备低温报警。
-* 报警方式为5时,取值如下:
+
+* 报警方式 AlarmMethod 为5时,取值如下:
 * 1-人工视频报警;
 * 2-运动目标检测报警;
 * 3-遗留物检测报警;
@@ -83,10 +88,11 @@ type DevicePosition struct {
 * 10-密度检测报警;
 * 11-视频异常检测报警;
 * 12-快速移动报警。
+
 * 报警方式为6时,取值下:
 * 1-存储设备磁盘故障报警;
 * 2-存储设备风扇故障报警。
- */
+*/
 type Alarm struct {
 	AlarmPriority    int    // 警报等级 1为一级警情, 2为二级警情, 3为三级警情, 4为四级警情
 	AlarmMethod      int    // 警报方法

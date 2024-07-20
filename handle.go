@@ -223,12 +223,11 @@ func (c *GB28181Config) OnRegister(req sip.Request, tx sip.ServerTransaction) {
 	}
 }
 
-// 终止会话
-func (c *GB28181Config) OnBye(req sip.Request, tx sip.ServerTransaction) {
-	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", ""))
-}
-
-// SIP 消息处理
+// 处理GB28181协议的SIP消息。
+// 当收到消息时，此函数将根据消息类型执行相应的处理逻辑，例如设备保活、目录查询、录像信息等。
+//
+//	req - SIP请求消息。
+//	tx - 服务器事务，用于发送响应。
 func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 	from, ok := req.From()
 	if !ok || from.Address == nil || from.Address.User() == nil {
@@ -236,22 +235,27 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 		return
 	}
 
-	// 从 SIP 请求中提取设备 ID
 	id := from.Address.User().String()
 	GB28181Plugin.Debug("SIP<-OnMessage", zap.String("id", id), zap.String("source", req.Source()), zap.String("req", req.String()))
 
+	// 从设备映射中查找设备对象。
 	// 根据设备 ID 查找设备对象
 	if v, ok := Devices.Load(id); ok {
 		d := v.(*Device)
 		switch d.Status {
 		case DeviceOfflineStatus, DeviceRecoverStatus:
+			// 如果设备状态为离线或恢复，则尝试恢复设备并同步通道信息。
 			// 如果设备处于离线或恢复状态,就调用 RecoverDevice 函数进行恢复
 			c.RecoverDevice(d, req)
 			go d.syncChannels()
 		case DeviceRegisterStatus:
+			// 如果设备状态为注册，则更新设备状态为在线。
 			d.Status = DeviceOnlineStatus
 		}
+		// 更新设备的最后活动时间。
 		d.UpdateTime = time.Now()
+
+		// 解析SIP请求体中的XML信息。
 		temp := &struct {
 			XMLName      xml.Name
 			CmdType      string
@@ -267,21 +271,26 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 		}{}
 		decoder := xml.NewDecoder(bytes.NewReader([]byte(req.Body())))
 		decoder.CharsetReader = charset.NewReaderLabel
-		err := decoder.Decode(temp)
-		if err != nil {
+		if err := decoder.Decode(temp); err != nil {
+			// 如果XML解码失败，则尝试使用GBK编码解码。
 			err = utils.DecodeGbk(temp, []byte(req.Body()))
 			if err != nil {
+				// 解码失败则记录错误。
 				GB28181Plugin.Error("decode catelog err", zap.Error(err))
 			}
 		}
+
+		// 根据命令类型处理不同的SIP消息。
 		var body string
 		switch temp.CmdType {
 		case "Keepalive":
+			// 设备保活消息处理。
 			d.LastKeepaliveAt = time.Now()
-			//callID !="" 说明是订阅的事件类型信息
 			if d.lastSyncTime.IsZero() {
+				// 如果设备未同步过通道信息，则启动同步。
 				go d.syncChannels()
 			} else {
+				// 如果设备已同步过通道信息，则根据配置尝试自动邀请。
 				d.channelMap.Range(func(key, value interface{}) bool {
 					if conf.InviteMode == INVIDE_MODE_AUTO {
 						value.(*Channel).TryAutoInvite(&InviteOptions{})
@@ -289,7 +298,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 					return true
 				})
 			}
-			// 在 KeepLive 进行位置订阅的处理，如果开启了自动订阅位置，则去订阅位置
+			// 根据配置自动订阅设备的位置信息。
 			if c.Position.AutosubPosition && time.Since(d.GpsTime) > c.Position.Interval*2 {
 				d.Subscribe_position(d.ID, c.Position.Expires, c.Position.Interval)
 				GB28181Plugin.Debug("Mobile Position Subscribe", zap.String("deviceID", d.ID))
@@ -297,25 +306,26 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			d.Debug("OnMessage -> Keepalive", zap.String("body", body))
 			EmitEvent(MessageEvent{Type: temp.CmdType, Device: d})
 		case "Catalog":
+			// 目录查询消息处理。
 			d.UpdateChannels(temp.DeviceList...)
 		case "RecordInfo":
+			// 录像信息查询消息处理。
 			RecordQueryLink.Put(d.ID, temp.DeviceID, temp.SN, temp.SumNum, temp.RecordList)
 		case "DeviceInfo":
+			// 设备信息更新消息处理。
 			// 主设备信息
 			d.Name = temp.DeviceName
 			d.Manufacturer = temp.Manufacturer
 			d.Model = temp.Model
 		case "Alarm":
-			// Alarm 命令, 将设备状态设置为报警状态, 并生成报警响应消息
+			// 报警消息处理。
 			body = req.Body()
 			d.Status = DeviceAlarmedStatus
 			d.Info("OnMessage -> Alarm", zap.String("body", body))
 			tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", BuildAlarmResponseXML(d.SN, d.ID)))
-
-			// 解码 XML 数据到 Alarm 结构体
+			// 解析报警详细信息。
 			alarm := &Alarm{}
-			err := decoder.Decode(alarm)
-			if err != nil {
+			if err := decoder.Decode(alarm); err != nil {
 				err = utils.DecodeGbk(alarm, []byte(req.Body()))
 				if err != nil {
 					GB28181Plugin.Error("decode catelog err", zap.Error(err))
@@ -323,18 +333,25 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			}
 			EmitEvent(MessageEvent{Type: temp.CmdType, Device: d, Message: alarm})
 		case "Broadcast":
+			// 广播消息处理。
 			GB28181Plugin.Info("broadcast message", zap.String("body", req.Body()))
 		case "DeviceControl":
+			// 设备控制消息处理。
 			GB28181Plugin.Info("DeviceControl message", zap.String("body", req.Body()))
 		default:
+			// 不支持的命令类型处理。
 			d.Warn("Not supported CmdType", zap.String("CmdType", temp.CmdType), zap.String("body", req.Body()))
 			response := sip.NewResponseFromRequest("", req, http.StatusBadRequest, "", "")
 			tx.Respond(response)
 			return
 		}
 	} else {
+		// 如果找不到设备，则记录日志。
 		GB28181Plugin.Debug("Unauthorized message, device not found", zap.String("id", id))
 	}
+}
+func (c *GB28181Config) OnBye(req sip.Request, tx sip.ServerTransaction) {
+	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", ""))
 }
 
 // SIP 事件通知
