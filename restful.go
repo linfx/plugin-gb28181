@@ -228,7 +228,79 @@ func (c *GB28181Config) API_control_guard(w http.ResponseWriter, r *http.Request
 }
 
 // 录像查询
-func (c *GB28181Config) API_records(w http.ResponseWriter, r *http.Request) {
+func (c *GB28181Config) API_v1_playback_list(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	id := query.Get("id")
+	channel := query.Get("channel")
+	startTime := query.Get("startTime")
+	endTime := query.Get("endTime")
+	trange := strings.Split(query.Get("range"), "-")
+	if len(trange) == 2 {
+		startTime = trange[0]
+		endTime = trange[1]
+	}
+	if c := FindChannel(id, channel); c != nil {
+		res, err := c.QueryRecord(startTime, endTime)
+		if err == nil {
+			util.ReturnValue(res, w, r)
+		} else {
+			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+		}
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
+// 录像 - 开始回放
+func (c *GB28181Config) API_v1_playback_play(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	id := query.Get("id")
+	channel := query.Get("channel")
+	startTime := query.Get("startTime")
+	endTime := query.Get("endTime")
+	trange := strings.Split(query.Get("range"), "-")
+	if len(trange) == 2 {
+		startTime = trange[0]
+		endTime = trange[1]
+	}
+	if c := FindChannel(id, channel); c != nil {
+		res, err := c.QueryRecord(startTime, endTime)
+		if err == nil {
+			util.ReturnValue(res, w, r)
+		} else {
+			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+		}
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
+// 录像 - 停止回放
+func (c *GB28181Config) API_v1_playback_stop(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	id := query.Get("id")
+	channel := query.Get("channel")
+	startTime := query.Get("startTime")
+	endTime := query.Get("endTime")
+	trange := strings.Split(query.Get("range"), "-")
+	if len(trange) == 2 {
+		startTime = trange[0]
+		endTime = trange[1]
+	}
+	if c := FindChannel(id, channel); c != nil {
+		res, err := c.QueryRecord(startTime, endTime)
+		if err == nil {
+			util.ReturnValue(res, w, r)
+		} else {
+			util.ReturnError(util.APIErrorInternal, err.Error(), w, r)
+		}
+	} else {
+		util.ReturnError(util.APIErrorNotFound, fmt.Sprintf("device %q channel %q not found", id, channel), w, r)
+	}
+}
+
+// 录像 - 回放控制
+func (c *GB28181Config) API_v1_playback_control(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id := query.Get("id")
 	channel := query.Get("channel")

@@ -19,7 +19,7 @@ import (
 	"m7s.live/plugin/ps/v4"
 )
 
-var QUERY_RECORD_TIMEOUT = time.Second * 5
+var QUERY_RECORD_TIMEOUT = time.Second * 10
 
 type PullStream struct {
 	opt       *InviteOptions

@@ -95,7 +95,9 @@ func (c *recordQueryLink) doPut(deviceId, channelId string, sn, sum int, record 
 }
 
 func (c *recordQueryLink) WaitResult(
-	deviceId, channelId string, sn int,
+	deviceId,
+	channelId string,
+	sn int,
 	timeout time.Duration) (resultCh <-chan recordQueryResult) {
 
 	key := recordQueryKey(deviceId, channelId, sn)
