@@ -310,6 +310,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			d.UpdateChannels(temp.DeviceList...)
 		case "RecordInfo":
 			// 录像信息查询消息处理。
+			GB28181Plugin.Info("RecordInfo message", zap.String("body", req.Body()))
 			RecordQueryLink.Put(d.ID, temp.DeviceID, temp.SN, temp.SumNum, temp.RecordList)
 		case "DeviceInfo":
 			// 设备信息更新消息处理。
@@ -321,7 +322,7 @@ func (c *GB28181Config) OnMessage(req sip.Request, tx sip.ServerTransaction) {
 			// 报警消息处理。
 			body = req.Body()
 			d.Status = DeviceAlarmedStatus
-			d.Info("OnMessage -> Alarm", zap.String("body", body))
+			d.Info("OnMessage->Alarm", zap.String("body", body))
 			tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", BuildAlarmResponseXML(d.SN, d.ID)))
 			// 解析报警详细信息。
 			alarm := &Alarm{}
