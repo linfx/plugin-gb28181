@@ -145,7 +145,7 @@ func (c *GB28181Config) API_control_fi(w http.ResponseWriter, r *http.Request) {
 }
 
 // 设备控制 - 预置位控制
-func (c *GB28181Config) API_control_preset(w http.ResponseWriter, r *http.Request) {
+func (c *GB28181Config) API_control_presets(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	id := q.Get("id")
 	channel := q.Get("channel")
@@ -177,7 +177,7 @@ func (c *GB28181Config) API_control_navigate(w http.ResponseWriter, r *http.Requ
 	id := q.Get("id")
 	channel := q.Get("channel")
 	cmd := q.Get("cmd")         // 控制指令，query, add, remove, setspeed, setstay, start, stop
-	groupid := q.Get("groupid") //巡航组编号(1~255), 适用于 add, remove, setspeed, setstay, start
+	groupid := q.Get("groupid") // 巡航组编号(1~255), 适用于 add, remove, setspeed, setstay, start
 	preset := q.Get("preset")   // 预置位编号(1~255)
 	speed := q.Get("speed")     // 巡航速度(1~4095), 适用于 setspeed
 	stay := q.Get("stay")       // 巡航停留时间(秒)(1~4095), 适用于 setstay

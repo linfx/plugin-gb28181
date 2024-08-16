@@ -75,7 +75,7 @@ type DevicePosition struct {
 * 4-设备高温报警;
 * 5-设备低温报警。
 
-* 报警方式 AlarmMethod 为5时,取值如下:
+* 报警方式 AlarmMethod 为5时, AlarmType取值如下:
 * 1-人工视频报警;
 * 2-运动目标检测报警;
 * 3-遗留物检测报警;
@@ -96,6 +96,7 @@ type DevicePosition struct {
 type Alarm struct {
 	AlarmPriority    int    // 警报等级 1为一级警情, 2为二级警情, 3为三级警情, 4为四级警情
 	AlarmMethod      int    // 警报方法
+	AlarmType        int    // 报警类型
 	AlarmTime        string // 警报时间
 	AlarmDescription string // 警报描述
 	AlarmInfo        string
